@@ -1,0 +1,9 @@
+secretGenerator:
+  - name: mysql-pass
+    namespace: lack
+    literals:
+    - password=Howlink@1401
+
+resources:
+  - mysql-deployment.yaml
+  - book-deployment.yaml

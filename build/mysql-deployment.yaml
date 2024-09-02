@@ -1,0 +1,77 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: lack-mysql
+  namespace: lack
+  labels:
+    app: lack
+spec:
+  ports:
+    - port: 3306
+  selector:
+    app: lack
+    tier: mysql
+  clusterIP: None
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pv-claim
+  labels:
+    app: lack
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lack-mysql
+  namespace: lack
+  labels:
+    app: lack
+spec:
+  selector:
+    matchLabels:
+      app: lack
+      tier: mysql
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      namespace: lack
+      labels:
+        app: lack
+        tier: mysql
+    spec:
+      containers:
+      - image: mysql:8.0
+        name: mysql
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-pass
+              key: password
+        - name: MYSQL_DATABASE
+          value: lack
+        - name: MYSQL_USER
+          value: lack
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-pass
+              key: password
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: mysql-persistent-storage
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: mysql-persistent-storage
+        persistentVolumeClaim:
+          claimName: mysql-pv-claim
